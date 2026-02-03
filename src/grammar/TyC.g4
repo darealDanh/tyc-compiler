@@ -24,11 +24,190 @@ options{
 	language=Python3;
 }
 
-// TODO: Define grammar rules here
-program: EOF;
+// ========== PARSER RULES ==========
 
-WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs
+program: declaration* EOF;
 
-ERROR_CHAR: .;
-ILLEGAL_ESCAPE:.;
-UNCLOSE_STRING:.;
+declaration: structDeclaration | functionDeclaration;
+
+// Struct declaration
+structDeclaration: STRUCT ID LBRACE structMemberList? RBRACE SEMI;
+structMemberList: structMember+;
+structMember: typ ID SEMI;
+
+// Function declaration
+functionDeclaration: (typ | /* inferred */) ID LPAREN parameterList? RPAREN blockStatement;
+parameterList: parameter (COMMA parameter)*;
+parameter: typ ID;
+
+// Type specification
+typ: primitiveType | ID;
+primitiveType: INT | FLOAT | STRING | VOID;
+
+// Statements
+statement
+    : varDeclaration
+    | blockStatement
+    | ifStatement
+    | whileStatement
+    | forStatement
+    | switchStatement
+    | breakStatement
+    | continueStatement
+    | returnStatement
+    | expressionStatement
+    ;
+
+varDeclaration: (AUTO | typ) ID (ASSIGN expression)? SEMI;
+
+blockStatement: LBRACE (varDeclaration | statement)* RBRACE;
+
+ifStatement: IF LPAREN expression RPAREN statement (ELSE statement)?;
+
+whileStatement: WHILE LPAREN expression RPAREN statement;
+
+forStatement: FOR LPAREN forInit? SEMI expression? SEMI forUpdate? RPAREN statement;
+forInit: varDeclaration | assignmentExpression;
+forUpdate: assignmentExpression | incrementExpression | decrementExpression;
+
+switchStatement: SWITCH LPAREN expression RPAREN LBRACE caseClause* RBRACE;
+caseClause: (CASE expression COLON statement*) | (DEFAULT COLON statement*);
+
+breakStatement: BREAK SEMI;
+continueStatement: CONTINUE SEMI;
+returnStatement: RETURN expression? SEMI;
+expressionStatement: expression SEMI;
+
+// Expressions with precedence (lowest to highest)
+expression: assignmentExpression;
+
+assignmentExpression: logicalOrExpression (ASSIGN assignmentExpression)?;
+
+logicalOrExpression: logicalAndExpression (OR logicalAndExpression)*;
+
+logicalAndExpression: equalityExpression (AND equalityExpression)*;
+
+equalityExpression: relationalExpression ((EQUAL | NOTEQUAL) relationalExpression)*;
+
+relationalExpression: additiveExpression ((LT | GT | LTE | GTE) additiveExpression)*;
+
+additiveExpression: multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*;
+
+multiplicativeExpression: unaryExpression ((MULT | DIV | MOD) unaryExpression)*;
+
+unaryExpression
+    : PLUS unaryExpression
+    | MINUS unaryExpression
+    | NOT unaryExpression
+    | INCR unaryExpression
+    | DECR unaryExpression
+    | postfixExpression
+    ;
+
+postfixExpression
+    : primaryExpression (postfixOp)*
+    ;
+
+postfixOp
+    : DOT ID                      // member access
+    | INCR                        // postfix increment
+    | DECR                        // postfix decrement
+    | LPAREN argumentList? RPAREN // function call
+    ;
+
+incrementExpression: (INCR unaryExpression) | (postfixExpression INCR);
+decrementExpression: (DECR unaryExpression) | (postfixExpression DECR);
+
+primaryExpression
+    : ID
+    | INTLIT
+    | FLOATLIT
+    | STRINGLIT
+    | LPAREN expression RPAREN
+    | structLiteral
+    ;
+
+structLiteral: LBRACE argumentList? RBRACE;
+argumentList: expression (COMMA expression)*;
+
+// ========== LEXER RULES ==========
+
+// Keywords (must come before ID)
+AUTO: 'auto';
+BREAK: 'break';
+CASE: 'case';
+CONTINUE: 'continue';
+DEFAULT: 'default';
+ELSE: 'else';
+FLOAT: 'float';
+FOR: 'for';
+IF: 'if';
+INT: 'int';
+RETURN: 'return';
+STRING: 'string';
+STRUCT: 'struct';
+SWITCH: 'switch';
+VOID: 'void';
+WHILE: 'while';
+
+// Operators
+PLUS: '+';
+MINUS: '-';
+MULT: '*';
+DIV: '/';
+MOD: '%';
+EQUAL: '==';
+NOTEQUAL: '!=';
+LT: '<';
+GT: '>';
+LTE: '<=';
+GTE: '>=';
+OR: '||';
+AND: '&&';
+NOT: '!';
+INCR: '++';
+DECR: '--';
+ASSIGN: '=';
+DOT: '.';
+
+// Separators
+LBRACE: '{';
+RBRACE: '}';
+LPAREN: '(';
+RPAREN: ')';
+SEMI: ';';
+COMMA: ',';
+COLON: ':';
+
+// Identifiers (after keywords)
+ID: [a-zA-Z_][a-zA-Z0-9_]*;
+
+// Literals
+INTLIT: [0-9]+;
+
+FLOATLIT
+    : [0-9]+ '.' [0-9]* ([eE][+\-]?[0-9]+)?  // 123.456, 123., 123.456e10
+    | '.' [0-9]+ ([eE][+\-]?[0-9]+)?          // .456, .456e10
+    | [0-9]+ [eE][+\-]?[0-9]+                 // 123e10
+    ;
+
+STRINGLIT: '"' STR_CHAR* '"' {self.text = self.text[1:-1]};
+
+fragment STR_CHAR
+    : ~[\r\n"\\]           // any character except newline, quote, backslash
+    | '\\' [bfrnt"\\]      // valid escape sequences
+    ;
+
+// Comments
+BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> skip;
+
+// Whitespace
+WS: [ \t\r\n\f]+ -> skip;
+
+// Error tokens (must be at the end)
+ILLEGAL_ESCAPE: '"' STR_CHAR* '\\' ~[bfrnt"\\] {self.text = self.text[1:]};
+
+UNCLOSE_STRING: '"' STR_CHAR* ([\r\n] | EOF) {self.text = self.text[1:]};
+
+ERROR_CHAR: . {self.text = self.text};
