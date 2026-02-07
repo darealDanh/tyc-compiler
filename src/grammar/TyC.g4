@@ -67,33 +67,31 @@ ifStatement: IF LPAREN expression RPAREN statement (ELSE statement)?;
 whileStatement: WHILE LPAREN expression RPAREN statement;
 
 forStatement: FOR LPAREN forInit? SEMI expression? SEMI forUpdate? RPAREN statement;
-forInit: varDeclaration | assignmentExpression;
-forUpdate: assignmentExpression | incrementExpression | decrementExpression;
+forInit: forVarDeclaration | expression;
+forVarDeclaration: (AUTO | typ) ID (ASSIGN expression)?;
+forUpdate: expression;
 
 switchStatement: SWITCH LPAREN expression RPAREN LBRACE caseClause* RBRACE;
 caseClause: (CASE expression COLON statement*) | (DEFAULT COLON statement*);
 
 breakStatement: BREAK SEMI;
+
+
+expression: assignmentExpression;
+
+
+
+assignmentExpression: logicalOrExpression (ASSIGN assignmentExpression)?;
+
 continueStatement: CONTINUE SEMI;
 returnStatement: RETURN expression? SEMI;
 expressionStatement: expression SEMI;
-
-// Expressions with precedence (lowest to highest)
-expression: assignmentExpression;
-
-assignmentExpression: logicalOrExpression (ASSIGN assignmentExpression)?;
 
 logicalOrExpression: logicalAndExpression (OR logicalAndExpression)*;
 
 logicalAndExpression: equalityExpression (AND equalityExpression)*;
 
 equalityExpression: relationalExpression ((EQUAL | NOTEQUAL) relationalExpression)*;
-
-relationalExpression: additiveExpression ((LT | GT | LTE | GTE) additiveExpression)*;
-
-additiveExpression: multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*;
-
-multiplicativeExpression: unaryExpression ((MULT | DIV | MOD) unaryExpression)*;
 
 unaryExpression
     : PLUS unaryExpression
@@ -115,9 +113,6 @@ postfixOp
     | LPAREN argumentList? RPAREN // function call
     ;
 
-incrementExpression: (INCR unaryExpression) | (postfixExpression INCR);
-decrementExpression: (DECR unaryExpression) | (postfixExpression DECR);
-
 primaryExpression
     : ID
     | INTLIT
@@ -128,11 +123,17 @@ primaryExpression
     ;
 
 structLiteral: LBRACE argumentList? RBRACE;
+
+relationalExpression: additiveExpression ((LT | GT | LTE | GTE) additiveExpression)*;
+
+additiveExpression: multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*;
+
+multiplicativeExpression: unaryExpression ((MULT | DIV | MOD) unaryExpression)*;
+
+
 argumentList: expression (COMMA expression)*;
 
-// ========== LEXER RULES ==========
 
-// Keywords (must come before ID)
 AUTO: 'auto';
 BREAK: 'break';
 CASE: 'case';

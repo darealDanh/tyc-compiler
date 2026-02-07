@@ -376,7 +376,7 @@ def test_string_escape_backslash():
 def test_string_escape_quote():
     """61. String: escape quote"""
     tokenizer = Tokenizer(r'"He said \"Hi\""')
-    assert tokenizer.get_tokens_as_string() == r'He said \"Hi\",<EOF>'
+    assert tokenizer.get_tokens_as_string() == r"He said \"Hi\",<EOF>"
 
 
 def test_string_escape_newline():
@@ -394,7 +394,7 @@ def test_string_escape_tab():
 def test_string_all_escapes():
     """64. String: all valid escapes"""
     tokenizer = Tokenizer(r'"\b\f\r\n\t\"\\"')
-    assert tokenizer.get_tokens_as_string() == r'\b\f\r\n\t\"\\ ,<EOF>'
+    assert tokenizer.get_tokens_as_string() == r"\b\f\r\n\t\"\\,<EOF>"
 
 
 def test_string_special_chars():
@@ -592,13 +592,17 @@ def test_complex_if_statement():
 def test_complex_for_loop():
     """96. Complex: for loop"""
     tokenizer = Tokenizer("for (auto i = 0; i < 10; ++i)")
-    assert tokenizer.get_tokens_as_string() == "for,(,auto,i,=,0,;,i,<,10,;,++,i,),<EOF>"
+    assert (
+        tokenizer.get_tokens_as_string() == "for,(,auto,i,=,0,;,i,<,10,;,++,i,),<EOF>"
+    )
 
 
 def test_complex_struct_declaration():
     """97. Complex: struct declaration"""
     tokenizer = Tokenizer("struct Point { int x; int y; };")
-    assert tokenizer.get_tokens_as_string() == "struct,Point,{,int,x,;,int,y,;,},;,<EOF>"
+    assert (
+        tokenizer.get_tokens_as_string() == "struct,Point,{,int,x,;,int,y,;,},;,<EOF>"
+    )
 
 
 def test_complex_member_access():
@@ -617,4 +621,3 @@ def test_complex_string_in_function():
     """100. Complex: string in function call"""
     tokenizer = Tokenizer('printString("Hello, World!");')
     assert tokenizer.get_tokens_as_string() == "printString,(,Hello, World!,),;,<EOF>"
-

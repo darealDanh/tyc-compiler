@@ -103,7 +103,7 @@ def test_struct_before_function():
 # ========== Function Declarations (10 tests) ==========
 def test_function_no_params():
     """14. Function with no parameters"""
-    source = "void greet() { printString(\"Hello\"); }"
+    source = 'void greet() { printString("Hello"); }'
     assert Parser(source).parse() == "success"
 
 
@@ -215,7 +215,7 @@ def test_var_decl_struct():
 
 def test_var_decl_multiple():
     """31. Multiple variable declarations"""
-    source = "void main() { int x = 1; float y = 2.0; string z = \"3\"; }"
+    source = 'void main() { int x = 1; float y = 2.0; string z = "3"; }'
     assert Parser(source).parse() == "success"
 
 
@@ -723,4 +723,3 @@ def test_factorial_program():
     }
     """
     assert Parser(source).parse() == "success"
-
